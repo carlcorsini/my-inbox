@@ -6,6 +6,7 @@ import MessageComponent from './components/MessageComponent'
 
 class App extends Component {
   state = {
+    messageIds: [],
     messages: [],
     display: false,
     subject: '',
@@ -19,6 +20,7 @@ class App extends Component {
   }
 
   toggleProperty(message, property) {
+    console.log('yee')
     const index = this.state.messages.indexOf(message)
     this.setState({
       messages: [
@@ -32,7 +34,17 @@ class App extends Component {
     })
   }
 
+  persistProperties = (message, command) => {}
+
   toggleStar = message => {
+    let payload = { messageIds: [message.id], command: 'star' }
+    fetch(`http://localhost:8082/api/messages/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
     this.toggleProperty(message, 'starred')
   }
 
@@ -42,9 +54,25 @@ class App extends Component {
 
   markReadStatus = boolean => {
     this.setState({
-      messages: this.state.messages.map(
-        message => (message.selected ? { ...message, read: boolean } : message)
-      )
+      messages: this.state.messages.map(message => {
+        if (message.selected) {
+          let payload = {
+            messageIds: [message.id],
+            command: 'read',
+            read: boolean
+          }
+          fetch(`http://localhost:8082/api/messages/`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          })
+          return { ...message, read: boolean }
+        } else {
+          return message
+        }
+      })
     })
   }
 
@@ -54,19 +82,45 @@ class App extends Component {
   // }
 
   applyLabel = label => {
-    const messages = this.state.messages.map(
-      message =>
-        message.selected && !message.labels.includes(label)
-          ? { ...message, labels: [...message.labels, label].sort() }
-          : message
-    )
+    const messages = this.state.messages.map(message => {
+      if (message.selected && !message.labels.includes(label)) {
+        let payload = {
+          messageIds: [message.id],
+          command: 'addLabel',
+          label: label
+        }
+        fetch(`http://localhost:8082/api/messages/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+
+        return { ...message, labels: [...message.labels, label].sort() }
+      }
+      return message
+    })
     this.setState({ messages })
   }
 
   removeLabel = label => {
     const messages = this.state.messages.map(message => {
       const index = message.labels.indexOf(label)
-      if (message.selected && index > -1)
+      if (message.selected && index > -1) {
+        let payload = {
+          messageIds: [message.id],
+          command: 'removeLabel',
+          label: label
+        }
+        fetch(`http://localhost:8082/api/messages/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+
         return {
           ...message,
           labels: [
@@ -74,6 +128,7 @@ class App extends Component {
             message.labels.slice(index + 1)
           ]
         }
+      }
       return message
     })
     this.setState({ messages })
@@ -116,7 +171,6 @@ class App extends Component {
       })
     })
     const message = await result.json()
-    console.log('RESULT', message)
   }
 
   sendMessage = async (content, read = false, starred = false, labels = []) => {
@@ -131,7 +185,6 @@ class App extends Component {
       })
     })
     const message = await result.json()
-    console.log('RESULT', message)
   }
 
   render() {

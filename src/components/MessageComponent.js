@@ -10,7 +10,6 @@ class MessageComponent extends Component {
   }
   render() {
     const { message, toggleStar, toggleSelect, showMessageBody } = this.props
-    console.log(this.props)
 
     const readClass = message.read ? 'read' : 'unread'
     const starClass = message.starred ? 'fa-star' : 'fa-star-o'

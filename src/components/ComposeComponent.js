@@ -7,7 +7,6 @@ class ComposeComponent extends Component {
   }
 
   render() {
-    console.log(this.state)
     const { sendMessage } = this.props
 
     return (
